@@ -1,17 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Clock } from 'lucide-react';
 import { TimerList } from './components/TimerList';
-import { AddTimerModal } from './components/AddTimerModal';
+import { CommonModal } from './components/CommonModal';
 import { Toaster } from 'sonner';
 
 function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [position, setPosition] = useState<"top-right" | "bottom-center">("top-right");
+
+  useEffect(() => {
+    const updatePosition = () => {
+      setPosition(window.innerWidth < 768 ? "bottom-center" : "top-right");
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    return () => window.removeEventListener("resize", updatePosition);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Toaster position="top-right" />
-      <div className="container mx-auto px-4 py-8">
-        <div>
+      <Toaster position={position}/>
+      <div className="container mx-auto px-4 py-8 mb-5">
+        <div className="flex justify-between mb-10">
           <div className="flex items-center gap-3">
             <Clock className="w-8 h-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">Timer</h1>
@@ -27,9 +39,10 @@ function Home() {
         
         <TimerList />
         
-        <AddTimerModal
+        <CommonModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          type="add"
         />
       </div>
     </div>
