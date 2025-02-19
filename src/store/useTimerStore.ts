@@ -1,9 +1,21 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit';
 import { useDispatch, useSelector } from 'react-redux';
 import { Timer } from '../types/timer';
+import { useCallback } from 'react';
+
+const TIMER_KEY: string = 'CW-TIMER'
+
+export const updateDataLS = (data: Array<Timer>) => {
+    localStorage.setItem(TIMER_KEY, JSON.stringify(data))
+}
+
+export const getDataLS = (): Array<Timer> => {
+    const data = localStorage.getItem(TIMER_KEY);
+    return data ? JSON.parse(data) : []
+  };
 
 const initialState = {
-  timers: [] as Timer[],
+  timers: getDataLS() as Timer[],
 };
 
 const timerSlice = createSlice({
@@ -16,15 +28,18 @@ const timerSlice = createSlice({
         id: crypto.randomUUID(),
         createdAt: Date.now(),
       });
+      updateDataLS(state.timers)
     },
     deleteTimer: (state, action) => {
       state.timers = state.timers.filter(timer => timer.id !== action.payload);
+      updateDataLS(state.timers)
     },
     toggleTimer: (state, action) => {
       const timer = state.timers.find(timer => timer.id === action.payload);
       if (timer) {
         timer.isRunning = !timer.isRunning;
       }
+      updateDataLS(state.timers)
     },
     updateTimer: (state, action) => {
       const timer = state.timers.find(timer => timer.id === action.payload);
@@ -32,6 +47,7 @@ const timerSlice = createSlice({
         timer.remainingTime -= 1;
         timer.isRunning = timer.remainingTime > 0;
       }
+      updateDataLS(state.timers)
     },
     restartTimer: (state, action) => {
       const timer = state.timers.find(timer => timer.id === action.payload);
@@ -39,6 +55,7 @@ const timerSlice = createSlice({
         timer.remainingTime = timer.duration;
         timer.isRunning = false;
       }
+      updateDataLS(state.timers)
     },
     editTimer: (state, action) => {
       const timer = state.timers.find(timer => timer.id === action.payload.id);
@@ -47,6 +64,7 @@ const timerSlice = createSlice({
         timer.remainingTime = action.payload.updates.duration || timer.duration;
         timer.isRunning = false;
       }
+      updateDataLS(state.timers)
     },
   },
 });
@@ -75,7 +93,7 @@ export const useTimerStore = () => {
     addTimer: (timer: Omit<Timer, 'id' | 'createdAt'>) => dispatch(addTimer(timer)),
     deleteTimer: (id: string) => dispatch(deleteTimer(id)),
     toggleTimer: (id: string) => dispatch(toggleTimer(id)),
-    updateTimer: (id: string) => dispatch(updateTimer(id)),
+    updateTimer: useCallback((id: string) => dispatch(updateTimer(id)), [dispatch]),
     restartTimer: (id: string) => dispatch(restartTimer(id)),
     editTimer: (id: string, updates: Partial<Timer>) => dispatch(editTimer({ id, updates })),
   };
